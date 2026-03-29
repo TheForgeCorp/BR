@@ -15,7 +15,7 @@
   }
 </style>
 <title>BR Inventory – 8750 Bayview Ave</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <style>
   :root {
     --pink:        #E8177A;
@@ -213,6 +213,16 @@
   }
   .item-row input.has-value { background: var(--pink-bg); border-color: var(--pink); }
   .item-row input.order-value { background: var(--green-bg); border-color: #81C784; color: var(--green); }
+  .item-row.is-disabled { background: #F0F0F0; }
+  .item-row.is-disabled:nth-child(even) { background: #EBEBEB; }
+  .item-row.is-disabled .item-name { color: #AAAAAA; }
+  .item-row.is-disabled .item-unit { background: #BBBBBB; }
+  .item-row.is-disabled input[type="number"] {
+    background: #E8E8E8;
+    border-color: #CCCCCC;
+    color: #BBBBBB;
+    pointer-events: none;
+  }
 
   /* ── TOTALS ROW ── */
   .totals-row {
@@ -587,9 +597,9 @@
 
 <!-- NAV -->
 <div class="nav-tabs">
-  <button class="nav-tab active" onclick="showPage('inventory', this)">🍦 Inventory</button>
-  <button class="nav-tab" onclick="showPage('pricing', this)">💰 Pricing</button>
-  <button class="nav-tab" onclick="showPage('manage', this)">⚙️ Manage Items</button>
+  <button class="nav-tab active" onclick="showPage('inventory', this)">Inventory</button>
+  <button class="nav-tab" onclick="showPage('pricing', this)">Pricing</button>
+  <button class="nav-tab" onclick="showPage('manage', this)">Manage Items</button>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -613,12 +623,12 @@
 
   <!-- SEND BAR -->
   <div class="send-bar">
-    <button class="btn-clear" onclick="confirmClear()">🔄</button>
+    <button class="btn-clear" onclick="confirmClear()">Clear</button>
     <button class="btn-whatsapp" onclick="sendAsInventory()">
-      📲 Send Inventory
+      Send Inventory
     </button>
     <button class="btn-text-send" onclick="sendAsText()">
-      📝 Text
+      Text
     </button>
   </div>
 </div>
@@ -655,7 +665,7 @@
 </div>
 
 <!-- Saved toast -->
-<div class="manage-saved-banner" id="saved-banner">✓ Saved</div>
+<div class="manage-saved-banner" id="saved-banner">Saved</div>
 
 <!-- FOOTER -->
 <div style="padding:8px 16px 80px;text-align:center;font-size:9px;color:#aaa;line-height:1.7;">
@@ -727,7 +737,7 @@ const SECTIONS = [
       { name: "ICING ON THE CAKE", unit: "TUB" },
       { name: "GOLD MEDAL RIBBON", unit: "TUB" },
       { name: "STRAWBERRY CHEESECAKE", unit: "TUB" },
-      { name: "DECORATING VANILLA", unit: "TUB" },
+      { name: "DECORATING VANILLA", unit: "TUB", disabled: true },
       { name: "ROCKY ROAD", unit: "TUB" },
       { name: "VERY BERRY STRAWBERRY", unit: "TUB" },
       { name: "NON-DAIRY COOKIES N' CREAM", unit: "TUB" },
@@ -915,7 +925,7 @@ function buildInventoryForm() {
       container.appendChild(makeItemRow(si, ii, item));
     });
 
-    // (Item management moved to ⚙️ Manage Items tab)
+    // (Item management is on the Manage Items tab)
   });
 
   updateTotals();
@@ -923,22 +933,21 @@ function buildInventoryForm() {
 
 function makeItemRow(si, ii, item) {
   const row = document.createElement('div');
-  row.className = 'item-row';
+  const isDisabled = !!item.disabled;
+  row.className = 'item-row' + (isDisabled ? ' is-disabled' : '');
   row.id = `inv-row-${si}-${ii}`;
   const inv = getInv(si, ii);
+  const dis = isDisabled ? 'disabled tabindex="-1"' : '';
+  const onHave = isDisabled ? '' : `onchange="setVal(${si},${ii},'have',this.value)" oninput="setVal(${si},${ii},'have',this.value)"`;
+  const onOrd  = isDisabled ? '' : `onchange="setVal(${si},${ii},'order',this.value)" oninput="setVal(${si},${ii},'order',this.value)"`;
   row.innerHTML = `
     <div class="item-name">${item.name}</div>
     <div style="text-align:center;"><span class="item-unit">${item.unit}</span></div>
-    <input type="number" min="0" value="${inv.have || ''}" placeholder="0"
-      id="have-${si}-${ii}" inputmode="numeric"
-      onchange="setVal(${si},${ii},'have',this.value)"
-      oninput="setVal(${si},${ii},'have',this.value)" />
-    <input type="number" min="0" value="${inv.order || ''}" placeholder="0"
-      id="order-${si}-${ii}" inputmode="numeric"
-      onchange="setVal(${si},${ii},'order',this.value)"
-      oninput="setVal(${si},${ii},'order',this.value)" />
+    <input type="number" min="0" value="${inv.have || ''}" placeholder="${isDisabled ? '—' : '0'}"
+      id="have-${si}-${ii}" inputmode="numeric" ${dis} ${onHave} />
+    <input type="number" min="0" value="${inv.order || ''}" placeholder="${isDisabled ? '—' : '0'}"
+      id="order-${si}-${ii}" inputmode="numeric" ${dis} ${onOrd} />
   `;
-  
   return row;
 }
 
@@ -1055,51 +1064,63 @@ async function sendAsInventory() {
   const origPadding = page.style.paddingBottom;
   const origTotalsPos = totalsRow ? totalsRow.style.position : '';
   const origTotalsBottom = totalsRow ? totalsRow.style.bottom : '';
-  page.style.paddingBottom = '16px';
+  page.style.paddingBottom = '0';
   if (totalsRow) { totalsRow.style.position = 'relative'; totalsRow.style.bottom = ''; }
+
+  // Inject order value row beneath totals for PDF capture
+  const fmtC = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let orderValue = 0;
+  SECTIONS.forEach((section, si) => {
+    [...section.items, ...getCustomItems(si)].forEach((_, ii) => {
+      orderValue += getPrice(si, ii) * (getInv(si, ii).order || 0);
+    });
+  });
+  const valueRow = document.createElement('div');
+  valueRow.style.cssText = 'background:#6B3A2A;color:#B9F6CA;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;';
+  valueRow.innerHTML = `<span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Order Value</span><span style="font-size:20px;font-weight:900;">${fmtC(orderValue)}</span>`;
+  page.appendChild(valueRow);
 
   const dateVal = document.getElementById('inv-date').value;
   const dateStr = dateVal
     ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
-    : 'inventory';
-  const filename = `BR-Order-${dateVal || 'draft'}.png`;
+    : 'draft';
+  const filename = `BR-Order-${dateVal || 'draft'}.pdf`;
 
   try {
-    // Scroll to top so capture starts from the beginning of the page
-    window.scrollTo(0, 0);
-    await new Promise(r => setTimeout(r, 50)); // let scroll settle
+    const pageH = page.scrollHeight;
+    const pageMM = Math.ceil(pageH * 0.264583) + 4;
 
-    // Use scale 4 so the canvas is ~1560px wide — enough to stay sharp
-    // after WhatsApp's internal image compression
-    const canvas = await html2canvas(page, {
-      scale: 4,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#FFF0F7',
-      height: page.scrollHeight,
-      windowHeight: page.scrollHeight,
-      scrollY: 0,
-      scrollX: 0,
-    });
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#FFF0F7',
+        height: pageH,
+        windowHeight: pageH,
+        scrollY: 0,
+        scrollX: 0,
+      },
+      jsPDF: { unit: 'mm', format: [110, pageMM], orientation: 'portrait' },
+    };
 
-    // PNG is lossless — no compression artifacts on text
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    const file = new File([blob], filename, { type: 'image/png' });
+    const blob = await html2pdf().set(opt).from(page).output('blob');
+    const file = new File([blob], filename, { type: 'application/pdf' });
 
     let shared = false;
 
-    // Try native share (mobile)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: `BR Order — ${dateStr}` });
         shared = true;
       } catch (shareErr) {
         if (shareErr.name === 'AbortError') return; // user cancelled
-        // share failed — fall through to download
       }
     }
 
-    // Fallback: download the image
     if (!shared) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1112,10 +1133,11 @@ async function sendAsInventory() {
     }
   } catch (e) {
     if (e.name !== 'AbortError') {
-      console.error('Image capture error:', e);
-      alert('Could not capture inventory.\n\n' + (e.message || e));
+      console.error('PDF error:', e);
+      alert('Could not generate PDF.\n\n' + (e.message || e));
     }
   } finally {
+    page.removeChild(valueRow);
     sendBar.style.display = '';
     page.style.paddingBottom = origPadding;
     if (totalsRow) { totalsRow.style.position = origTotalsPos; totalsRow.style.bottom = origTotalsBottom; }
@@ -1136,8 +1158,8 @@ function sendAsText() {
     : 'Date not set';
 
   let msg = `*BASKIN-ROBBINS PRODUCT ORDER*\n`;
-  msg += `📅 ${dateStr}\n`;
-  if (staffVal) msg += `👤 ${staffVal}\n`;
+  msg += `${dateStr}\n`;
+  if (staffVal) msg += `${staffVal}\n`;
 
   let grandOrder = 0;
   let orderTotal = 0;
@@ -1153,7 +1175,7 @@ function sendAsText() {
       grandOrder += order;
       orderTotal += getPrice(si, ii) * order;
       if (have > 0 || order > 0) {
-        const name = item.name.length > 30 ? item.name.slice(0, 29) + '…' : item.name;
+        const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name;
         rows.push({ name, have, order });
       }
     });
@@ -1161,9 +1183,10 @@ function sendAsText() {
     if (rows.length > 0) {
       msg += `\n*${section.name}*\n`;
       msg += '```\n';
-      msg += padR('─'.repeat(30), 31) + padL('H', 4) + padL('Ord', 4) + '\n';
+      msg += padR('Item', 22) + padL('H', 4) + padL('Ord', 4) + '\n';
+      msg += '─'.repeat(30) + '\n';
       rows.forEach(r => {
-        msg += padR(r.name, 31) + padL(r.have, 4) + padL(r.order, 4) + '\n';
+        msg += padR(r.name, 22) + padL(r.have, 4) + padL(r.order, 4) + '\n';
       });
       msg += '```\n';
     }
@@ -1188,7 +1211,7 @@ function confirmClear() {
     // Second tap within 3 s — execute clear
     clearTimeout(_clearTimer);
     _clearTimer = null;
-    btn.textContent = '🔄';
+    btn.textContent = 'Clear';
     btn.style.background = '';
     btn.style.color = '';
     state.inventory = {};
@@ -1200,12 +1223,12 @@ function confirmClear() {
     localStorage.removeItem(LS_KEYS.staffDate);
   } else {
     // First tap — ask for confirmation via button state
-    btn.textContent = '✓?';
+    btn.textContent = 'Sure?';
     btn.style.background = '#E53935';
     btn.style.color = '#fff';
     _clearTimer = setTimeout(() => {
       _clearTimer = null;
-      btn.textContent = '🔄';
+      btn.textContent = 'Clear';
       btn.style.background = '';
       btn.style.color = '';
     }, 3000);

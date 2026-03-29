@@ -1107,10 +1107,9 @@ function sendAsText() {
     ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
     : 'Date not set';
 
-  let msg = `🍦 *BASKIN-ROBBINS PRODUCT ORDER*\n`;
-  msg += `📅 ${dateStr}`;
-  if (staffVal) msg += `  👤 ${staffVal}`;
-  msg += '\n';
+  let msg = `*BASKIN-ROBBINS PRODUCT ORDER*\n`;
+  msg += `📅 ${dateStr}\n`;
+  if (staffVal) msg += `👤 ${staffVal}\n`;
 
   let grandOrder = 0;
   let orderTotal = 0;
@@ -1126,8 +1125,7 @@ function sendAsText() {
       grandOrder += order;
       orderTotal += getPrice(si, ii) * order;
       if (have > 0 || order > 0) {
-        // Truncate name to fit column
-        const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name;
+        const name = item.name.length > 18 ? item.name.slice(0, 17) + '…' : item.name;
         rows.push({ name, have, order });
       }
     });
@@ -1135,10 +1133,9 @@ function sendAsText() {
     if (rows.length > 0) {
       msg += `\n*${section.name}*\n`;
       msg += '```\n';
-      msg += padR('ITEM', 23) + padL('H', 4) + padL('Ord', 5) + '\n';
-      msg += '─'.repeat(32) + '\n';
+      msg += padR('─'.repeat(18), 19) + padL('H', 4) + padL('Ord', 5) + '\n';
       rows.forEach(r => {
-        msg += padR(r.name, 23) + padL(r.have, 4) + padL(r.order, 5) + '\n';
+        msg += padR(r.name, 19) + padL(r.have, 4) + padL(r.order, 5) + '\n';
       });
       msg += '```\n';
     }
@@ -1146,7 +1143,7 @@ function sendAsText() {
 
   msg += `\n*────────────────────────*\n`;
   msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
-  if (orderTotal > 0) msg += `*ORDER VALUE: $${orderTotal.toFixed(2)}*\n`;
+  if (orderTotal > 0) msg += `\n*ORDER VALUE: $${orderTotal.toFixed(2)}*\n`;
 
   const encoded = encodeURIComponent(msg);
   window.open(`https://wa.me/?text=${encoded}`, '_blank');

@@ -1153,7 +1153,7 @@ function sendAsText() {
       grandOrder += order;
       orderTotal += getPrice(si, ii) * order;
       if (have > 0 || order > 0) {
-        const name = item.name.length > 24 ? item.name.slice(0, 23) + '…' : item.name;
+        const name = item.name.length > 30 ? item.name.slice(0, 29) + '…' : item.name;
         rows.push({ name, have, order });
       }
     });
@@ -1161,9 +1161,9 @@ function sendAsText() {
     if (rows.length > 0) {
       msg += `\n*${section.name}*\n`;
       msg += '```\n';
-      msg += padR('─'.repeat(24), 25) + padL('H', 4) + padL('Ord', 5) + '\n';
+      msg += padR('─'.repeat(30), 31) + padL('H', 4) + padL('Ord', 4) + '\n';
       rows.forEach(r => {
-        msg += padR(r.name, 25) + padL(r.have, 4) + padL(r.order, 5) + '\n';
+        msg += padR(r.name, 31) + padL(r.have, 4) + padL(r.order, 4) + '\n';
       });
       msg += '```\n';
     }

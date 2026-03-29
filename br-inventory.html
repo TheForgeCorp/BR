@@ -1196,7 +1196,7 @@ function sendAsText() {
   msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
 
   const encoded = encodeURIComponent(msg);
-  window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  location.href = `https://wa.me/?text=${encoded}`;
 }
 
 // ═══════════════════════════════════════

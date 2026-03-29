@@ -1076,7 +1076,7 @@ async function sendAsInventory() {
     });
   });
   const valueRow = document.createElement('div');
-  valueRow.style.cssText = 'background:#6B3A2A;color:#B9F6CA;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;';
+  valueRow.style.cssText = 'background:#E8177A;color:#FFFFFF;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;';
   valueRow.innerHTML = `<span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Order Value</span><span style="font-size:20px;font-weight:900;">${fmtC(orderValue)}</span>`;
   page.appendChild(valueRow);
 
@@ -1087,8 +1087,11 @@ async function sendAsInventory() {
   const filename = `BR-Order-${dateVal || 'draft'}.pdf`;
 
   try {
+    // Wait two animation frames so the browser finishes layout after DOM changes
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
     const pageH = page.scrollHeight;
-    const pageMM = Math.ceil(pageH * 0.264583) + 4;
+    const pageMM = Math.ceil(pageH * 0.264583) + 8;
 
     const opt = {
       margin: 0,

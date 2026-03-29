@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<style>
+  /* Phone preview wrapper — simulates a phone screen on desktop */
+  html { background: #888; }
+  body {
+    max-width: 390px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    min-height: 100vh;
+    background: var(--pink-bg);
+  }
+</style>
+<title>BR Inventory – 8750 Bayview Ave</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --pink:        #E8177A;
+    --pink-light:  #FFB3D1;
+    --pink-bg:     #FFF0F7;
+    --brown:       #6B3A2A;
+    --brown-light: #C47B55;
+    --brown-bg:    #FFF8F5;
+    --white:       #FFFFFF;
+    --gray-light:  #F5F5F5;
+    --gray-border: #E0E0E0;
+    --text-dark:   #2D1A12;
+    --text-mid:    #6B4A3A;
+    --green:       #2E7D32;
+    --green-bg:    #E8F5E9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--pink-bg);
+    color: var(--text-dark);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--pink);
+    color: var(--white);
+    padding: 14px 16px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  /* ── NAV TABS ── */
+  .nav-tabs {
+    display: flex;
+    background: var(--brown);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    flex: none;
+    padding: 10px 16px;
+    color: #E8C4A8;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--pink-light);
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 0 0 100px; }
+  .page.active { display: block; }
+
+  /* ── DATE BAR ── */
+  .date-bar {
+    background: var(--brown-bg);
+    border-bottom: 1px solid var(--gray-border);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .date-bar label { font-size: 12px; font-weight: 600; color: var(--brown); }
+  .date-bar input[type="date"] {
+    border: 1px solid var(--pink-light);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-size: 14px;
+    color: var(--text-dark);
+    background: var(--white);
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+  .date-bar input[type="text"] {
+    border: 1px solid var(--pink-light);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-size: 14px;
+    color: var(--text-dark);
+    background: var(--white);
+    flex: 1;
+    min-width: 130px;
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .section-header {
+    background: var(--brown);
+    color: var(--white);
+    padding: 10px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: grid;
+    grid-template-columns: 1fr 42px 58px 58px;
+    gap: 4px;
+    margin-top: 10px;
+    min-height: 43px;
+    align-items: center;
+  }
+  .section-header .col-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-align: center;
+    color: #E8C4A8;
+    align-self: end;
+  }
+  .section-header .col-name { color: var(--white); font-size: 12px; align-self: center; }
+
+  /* ── ITEM ROW ── */
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr 42px 58px 58px;
+    gap: 4px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--gray-border);
+    background: var(--white);
+    align-items: center;
+    min-height: 50px;
+    position: relative;
+    transition: background-color 0.3s ease;
+  }
+  .item-row:nth-child(even) { background: var(--gray-light); }
+  .item-row.highlight { background: #FFF3E0; }
+
+  .item-name {
+    font-size: 12px;
+    color: var(--text-dark);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .item-unit {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--white);
+    background: var(--brown-light);
+    border-radius: 4px;
+    padding: 1px 4px;
+    display: inline-block;
+    margin-top: 2px;
+  }
+
+  .item-row input[type="number"] {
+    width: 100%;
+    border: 1px solid var(--pink-light);
+    border-radius: 8px;
+    padding: 9px 3px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-dark);
+    background: var(--white);
+    -moz-appearance: textfield;
+    appearance: textfield;
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+  .item-row input[type="number"]::-webkit-inner-spin-button,
+  .item-row input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .item-row input[type="number"]:focus {
+    outline: none;
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(232,0,107,0.2);
+    transform: scale(1.02);
+    transition: transform 0.15s ease-out;
+  }
+  .item-row input.has-value { background: var(--pink-bg); border-color: var(--pink); }
+  .item-row input.order-value { background: var(--green-bg); border-color: #81C784; color: var(--green); }
+
+  /* ── TOTALS ROW ── */
+  .totals-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 12px 12px;
+    background: var(--brown);
+    color: var(--white);
+    margin-top: 10px;
+    position: sticky;
+    bottom: 60px;
+  }
+  .totals-row .total-label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex: 1;
+  }
+  .totals-row .total-val-order {
+    font-size: 20px;
+    font-weight: 900;
+    text-align: right;
+    color: #B9F6CA;
+  }
+
+  /* ── SEND BAR ── */
+  .send-bar {
+    position: fixed;
+    bottom: 0; left: 50%; right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 390px;
+    background: var(--white);
+    border-top: 2px solid var(--pink-light);
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 200;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  }
+  body { position: relative; }
+  .btn-clear {
+    flex: 0 0 auto;
+    background: var(--gray-light);
+    border: 1px solid var(--gray-border);
+    border-radius: 10px;
+    color: var(--text-mid);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 14px;
+    cursor: pointer;
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-whatsapp {
+    flex: 1;
+    background: #25D366;
+    border: none;
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-whatsapp:active { background: #1da851; }
+  .btn-whatsapp:hover { background: #1ecb4f; }
+  .btn-text-send {
+    flex: 0 0 auto;
+    background: var(--brown);
+    border: none;
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 14px;
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-text-send:active { background: #4A2518; }
+
+  /* ── PRICING PAGE ── */
+  .pricing-intro {
+    background: var(--brown-bg);
+    border-bottom: 1px solid var(--gray-border);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+  .pricing-intro strong { color: var(--brown); }
+
+  .price-section-header {
+    background: var(--brown);
+    color: var(--white);
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: grid;
+    grid-template-columns: 1fr 100px 100px;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .price-section-header .col-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    color: #E8C4A8;
+    align-self: end;
+  }
+
+  .price-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px;
+    gap: 4px;
+    padding: 7px 16px;
+    border-bottom: 1px solid var(--gray-border);
+    background: var(--white);
+    align-items: center;
+  }
+  .price-row:nth-child(even) { background: var(--gray-light); }
+  .price-row .item-name { font-size: 12px; }
+  .price-row input[type="number"] {
+    width: 100%;
+    border: 1px solid var(--pink-light);
+    border-radius: 8px;
+    padding: 9px 3px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-dark);
+    background: var(--white);
+    -moz-appearance: textfield;
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+  .price-row input[type="number"]::-webkit-inner-spin-button,
+  .price-row input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .price-row input[type="number"]:focus {
+    outline: none;
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(232,0,107,0.2);
+    transform: scale(1.02);
+    transition: transform 0.15s ease-out;
+  }
+  .price-row .line-total {
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--green);
+    padding: 7px 4px;
+  }
+
+  .order-total-bar {
+    background: var(--pink);
+    color: var(--white);
+    padding: 16px;
+    margin: 16px 16px 8px;
+    border-radius: 14px;
+    text-align: center;
+  }
+  .order-total-bar .ot-label { font-size: 12px; font-weight: 600; opacity: 0.85; margin-bottom: 4px; }
+  .order-total-bar .ot-value { font-size: 32px; font-weight: 900; }
+
+  .order-total-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-mid);
+    padding: 0 16px 16px;
+  }
+
+  /* ── MANAGE ITEMS PAGE ── */
+  .manage-intro {
+    background: var(--brown-bg);
+    border-bottom: 1px solid var(--gray-border);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+  .manage-intro strong { color: var(--brown); }
+
+  .manage-section {
+    margin-top: 10px;
+  }
+  .manage-section-header {
+    background: var(--brown);
+    color: var(--white);
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .manage-section-header .section-toggle {
+    font-size: 16px;
+    color: #E8C4A8;
+    transition: transform 0.2s;
+  }
+  .manage-section-header.collapsed .section-toggle { transform: rotate(-90deg); }
+
+  .manage-section-body { display: block; }
+  .manage-section-body.collapsed { display: none; }
+
+  .manage-add-form {
+    background: #FFFDE7;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gray-border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .manage-add-form input[type="text"] {
+    flex: 1;
+    border: 1px solid var(--brown-light);
+    border-radius: 8px;
+    padding: 10px 10px;
+    font-size: 16px;
+    color: var(--text-dark);
+    background: var(--white);
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .manage-add-form select {
+    border: 1px solid var(--brown-light);
+    border-radius: 8px;
+    padding: 10px 6px;
+    font-size: 16px;
+    color: var(--text-dark);
+    background: var(--white);
+    width: 72px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .btn-add-item {
+    background: var(--pink);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-add-item:active { background: #c40060; }
+
+  .manage-item-list {}
+  .manage-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--gray-border);
+    background: var(--white);
+    gap: 8px;
+  }
+  .manage-item-row:nth-child(even) { background: var(--gray-light); }
+  .manage-item-row.is-custom { background: #FFF8E1; }
+  .manage-item-info { flex: 1; }
+  .manage-item-name { font-size: 13px; color: var(--text-dark); }
+  .manage-item-meta { font-size: 10px; color: var(--text-mid); margin-top: 2px; }
+  .manage-item-badge {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--brown-light);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-right: 4px;
+  }
+  .manage-item-badge.custom-badge {
+    background: var(--pink);
+  }
+  .btn-remove-item {
+    background: transparent;
+    border: 1px solid #FFCDD2;
+    border-radius: 6px;
+    color: #C62828;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-remove-item:active { background: #FFEBEE; }
+  .manage-empty {
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-mid);
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-border);
+    font-style: italic;
+  }
+  .manage-saved-banner {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--brown);
+    color: var(--white);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 300;
+    white-space: nowrap;
+  }
+  .manage-saved-banner.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div style="background:white;border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;">
+      <img src="br-logo.png" alt="Baskin-Robbins" style="height:36px;" />
+    </div>
+    <div style="font-size:11px;opacity:0.8;text-align:right;font-weight:600;">Product Ordering</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showPage('inventory', this)">🍦 Inventory</button>
+  <button class="nav-tab" onclick="showPage('pricing', this)">💰 Pricing</button>
+  <button class="nav-tab" onclick="showPage('manage', this)">⚙️ Manage Items</button>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- INVENTORY PAGE                              -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page-inventory" class="page active">
+
+  <div class="date-bar">
+    <label>Date:</label>
+    <input type="date" id="inv-date" />
+    <input type="text" id="staff-name" placeholder="Staff name..." />
+  </div>
+
+  <div id="inventory-form"></div>
+
+  <!-- TOTALS -->
+  <div class="totals-row">
+    <div class="total-label">Total Units to Order</div>
+    <div class="total-val-order" id="grand-order">0</div>
+  </div>
+
+  <!-- SEND BAR -->
+  <div class="send-bar">
+    <button class="btn-clear" onclick="confirmClear()">🔄</button>
+    <button class="btn-whatsapp" onclick="sendAsPDF()">
+      📄 Send as PDF
+    </button>
+    <button class="btn-text-send" onclick="sendAsText()">
+      📝 Text
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PRICING PAGE                                -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page-pricing" class="page">
+
+  <div class="pricing-intro">
+    Enter the <strong>unit price</strong> for each product. The <strong>Line Total</strong> is automatically calculated using the "To Order" quantities from the Inventory page.
+  </div>
+
+  <div class="order-total-bar">
+    <div class="ot-label">TOTAL ORDER VALUE</div>
+    <div class="ot-value" id="order-total-display">$0.00</div>
+  </div>
+  <div class="order-total-note">Based on "To Order" quantities × unit prices</div>
+
+  <div id="pricing-form"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MANAGE ITEMS PAGE                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page-manage" class="page">
+
+  <div class="manage-intro">
+    Add or remove items <strong>by category</strong>. Custom items are saved to this device and appear in the Inventory and Pricing pages. Base items cannot be removed.
+  </div>
+
+  <div id="manage-sections"></div>
+
+</div>
+
+<!-- Saved toast -->
+<div class="manage-saved-banner" id="saved-banner">✓ Saved</div>
+
+<script>
+// ═══════════════════════════════════════
+// PRODUCT DATA
+// ═══════════════════════════════════════
+const SECTIONS = [
+  {
+    name: "BAKERY",
+    items: [
+      { name: "BROWNIE", unit: "CASE" },
+      { name: "9\" DOUBLE FUDGE BROWNIE (POLAR PIZZA)", unit: "CASE" },
+      { name: "9\" CHOCOLATE CHIP COOKIE (POLAR PIZZA)", unit: "CASE" },
+    ]
+  },
+  {
+    name: "BEVERAGES",
+    items: [
+      { name: "STRAWBERRY SMOOTHIE BASE", unit: "CASE" },
+      { name: "10 lb. Mango, IQF, Diced 3/8\"", unit: "CASE" },
+      { name: "10 lb. Strawberries, IQF, Diced 3/8\"", unit: "CASE" },
+      { name: "MANGO SMOOTHIE BASE", unit: "CASE" },
+      { name: "CAPPUCCINO BLAST BASE", unit: "CASE" },
+    ]
+  },
+  {
+    name: "FLAVOUR OF THE MONTH",
+    items: [
+      { name: "FLAVOUR OF THE MONTH – THIS MONTH", unit: "TUB" },
+      { name: "FLAVOUR OF THE MONTH – NEXT MONTH", unit: "TUB" },
+    ]
+  },
+  {
+    name: "CAKE LAYERS",
+    items: [
+      { name: "SHEET CAKE CHOCOLATE", unit: "CASE" },
+      { name: "ROLL CAKE CHOCOLATE", unit: "CASE" },
+      { name: "SHEET CAKE WHITE", unit: "CASE" },
+    ]
+  },
+  {
+    name: "NO SUGAR ADDED",
+    items: [
+      { name: "CARAMEL TURTLE NSA DOM", unit: "TUB" },
+      { name: "PINEAPPLE COCONUT", unit: "TUB" },
+    ]
+  },
+  {
+    name: "PERMANENTS",
+    items: [
+      { name: "JAMOCA ALMOND FUDGE", unit: "TUB" },
+      { name: "MINT CHOCOLATE CHIP", unit: "TUB" },
+      { name: "COTTON CANDY", unit: "TUB" },
+      { name: "CHOCOLATE CHIP", unit: "TUB" },
+      { name: "CHOCOLATE CHIP COOKIE DOUGH", unit: "TUB" },
+      { name: "PRALINES N' CREAM", unit: "TUB" },
+      { name: "COOKIES N' CREAM", unit: "TUB" },
+      { name: "MANGO TANGO", unit: "TUB" },
+      { name: "PEANUT BUTTER N' CHOCOLATE", unit: "TUB" },
+      { name: "PISTACHIO ALMOND", unit: "TUB" },
+      { name: "CHOCOLATE MOUSSE ROYALE", unit: "TUB" },
+      { name: "CHOCOLATE", unit: "TUB" },
+      { name: "RUM N' RAISIN", unit: "TUB" },
+      { name: "ICING ON THE CAKE", unit: "TUB" },
+      { name: "GOLD MEDAL RIBBON", unit: "TUB" },
+      { name: "STRAWBERRY CHEESECAKE", unit: "TUB" },
+      { name: "DECORATING VANILLA", unit: "TUB" },
+      { name: "ROCKY ROAD", unit: "TUB" },
+      { name: "VERY BERRY STRAWBERRY", unit: "TUB" },
+      { name: "NON-DAIRY COOKIES N' CREAM", unit: "TUB" },
+      { name: "WORLD CLASS CHOCOLATE", unit: "TUB" },
+      { name: "VANILLA", unit: "TUB" },
+      { name: "CHERRIES JUBILEE", unit: "TUB" },
+    ]
+  },
+  {
+    name: "PRE-PACKS",
+    items: [
+      { name: "PRALINES N' CREAM", unit: "CASE" },
+      { name: "MANGO TANGO", unit: "CASE" },
+      { name: "WORLD CLASS CHOCOLATE", unit: "CASE" },
+      { name: "COTTON CANDY", unit: "CASE" },
+      { name: "PEANUT BUTTER N' CHOCOLATE", unit: "CASE" },
+      { name: "RAINBOW SHERBERT", unit: "CASE" },
+      { name: "COOKIES N' CREAM", unit: "CASE" },
+      { name: "GOLD MEDAL RIBBON", unit: "CASE" },
+      { name: "JAMOCA ALMOND FUDGE", unit: "CASE" },
+      { name: "MINT CHOCOLATE CHIP", unit: "CASE" },
+      { name: "CHOCOLATE MOUSE ROYALE", unit: "CASE" },
+      { name: "VANILLA", unit: "CASE" },
+    ]
+  },
+  {
+    name: "ROTATORS",
+    items: [
+      { name: "MANGO MANIA DOMESTIC", unit: "TUB" },
+      { name: "GERMAN CHOCOLATE CAKE", unit: "TUB" },
+      { name: "NUTTY COCONUT", unit: "TUB" },
+      { name: "BASEBALL NUT", unit: "TUB" },
+      { name: "MAPLE WALNUT", unit: "TUB" },
+      { name: "MADE WITH SNICKERS", unit: "TUB" },
+      { name: "MOM'S MAKIN' COOKIES", unit: "TUB" },
+      { name: "NON-DAIRY MINT CHOCOCHUNK", unit: "TUB" },
+      { name: "APPLE CINNAMON FRITTER", unit: "TUB" },
+      { name: "PEANUT BUTTER BLOSSOM", unit: "TUB" },
+    ]
+  },
+  {
+    name: "SHERBETS",
+    items: [
+      { name: "RAINBOW SHER FOR DOMESTIC", unit: "TUB" },
+      { name: "WILD N RECKLESS DOM", unit: "TUB" },
+    ]
+  },
+  {
+    name: "ICE / SORBET",
+    items: [
+      { name: "CITRUS TWIST", unit: "TUB" },
+    ]
+  },
+  {
+    name: "TOPPINGS",
+    items: [
+      { name: "REESE PEANUT BUTTER CUP (GROUND)", unit: "CASE" },
+      { name: "ON TOP TOPPING", unit: "CASE" },
+      { name: "COOKIE DOUGH TOPPING", unit: "CASE" },
+      { name: "RICH'S TOPPING (WHIP CREAM)", unit: "CASE" },
+    ]
+  },
+  {
+    name: "CAKE LAYERS (ROUND)",
+    items: [
+      { name: "ROUND CAKE – WHITE – 8.5\"", unit: "CASE" },
+      { name: "ROUND CAKE – CHOCOLATE – 8.5\"", unit: "CASE" },
+    ]
+  },
+  {
+    name: "YOGURTS",
+    items: [
+      { name: "MAUI BROWNIE MADNESS", unit: "TUB" },
+    ]
+  },
+];
+
+// ═══════════════════════════════════════
+// STATE + LOCALSTORAGE PERSISTENCE
+// ═══════════════════════════════════════
+const LS_KEYS = {
+  inventory:   'br_inventory',
+  prices:      'br_prices',
+  customItems: 'br_custom_items',
+  staffDate:   'br_staff_date',
+};
+
+function loadState() {
+  try {
+    return {
+      inventory:   JSON.parse(localStorage.getItem(LS_KEYS.inventory))   || {},
+      prices:      JSON.parse(localStorage.getItem(LS_KEYS.prices))      || {},
+      customItems: JSON.parse(localStorage.getItem(LS_KEYS.customItems)) || {},
+    };
+  } catch(e) { return { inventory: {}, prices: {}, customItems: {} }; }
+}
+
+const state = loadState();
+
+// Default prices — keyed by name so they survive section reordering
+const DEFAULT_PRICES = {
+  // All TUB items default to $60.99
+  '_TUB_DEFAULT': 60.99,
+  // PRE-PACKS default
+  '_PREPACK_DEFAULT': 34.21,
+  // Specific items by name
+  '9" DOUBLE FUDGE BROWNIE (POLAR PIZZA)': 78.01,
+  '9" CHOCOLATE CHIP COOKIE (POLAR PIZZA)': 82.99,
+  'STRAWBERRY SMOOTHIE BASE': 52.73,
+  "RICH'S TOPPING (WHIP CREAM)": 78.80,
+};
+
+function applyDefaultPrices() {
+  if (Object.keys(state.prices).length > 0) return;
+
+  SECTIONS.forEach((section, si) => {
+    if (!state.prices[si]) state.prices[si] = {};
+    section.items.forEach((item, ii) => {
+      // Check for a specific named price first
+      if (DEFAULT_PRICES[item.name] !== undefined) {
+        state.prices[si][ii] = DEFAULT_PRICES[item.name];
+      } else if (section.name === 'PRE-PACKS') {
+        state.prices[si][ii] = DEFAULT_PRICES['_PREPACK_DEFAULT'];
+      } else if (item.unit === 'TUB') {
+        state.prices[si][ii] = DEFAULT_PRICES['_TUB_DEFAULT'];
+      }
+    });
+  });
+
+  savePrices();
+}
+applyDefaultPrices();
+
+function saveInventory()   { localStorage.setItem(LS_KEYS.inventory,   JSON.stringify(state.inventory)); }
+function savePrices()      { localStorage.setItem(LS_KEYS.prices,      JSON.stringify(state.prices)); }
+function saveCustomItems() { localStorage.setItem(LS_KEYS.customItems, JSON.stringify(state.customItems)); }
+
+function showSavedBanner() {
+  const b = document.getElementById('saved-banner');
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 1500);
+}
+
+function getInv(si, ii) {
+  if (!state.inventory[si]) state.inventory[si] = {};
+  if (!state.inventory[si][ii]) state.inventory[si][ii] = { have: 0, order: 0 };
+  return state.inventory[si][ii];
+}
+function getPrice(si, ii) {
+  if (!state.prices[si]) state.prices[si] = {};
+  return state.prices[si][ii] || 0;
+}
+function setPrice(si, ii, val) {
+  if (!state.prices[si]) state.prices[si] = {};
+  state.prices[si][ii] = val;
+  savePrices();
+}
+function getCustomItems(si) {
+  if (!state.customItems[si]) state.customItems[si] = [];
+  return state.customItems[si];
+}
+
+// ═══════════════════════════════════════
+// BUILD INVENTORY FORM
+// ═══════════════════════════════════════
+function buildInventoryForm() {
+  const container = document.getElementById('inventory-form');
+  container.innerHTML = '';
+
+  SECTIONS.forEach((section, si) => {
+    // Section header row
+    const hdr = document.createElement('div');
+    hdr.className = 'section-header';
+    hdr.innerHTML = `
+      <div class="col-name">${section.name}</div>
+      <div class="col-label">UNIT</div>
+      <div class="col-label">WE HAVE</div>
+      <div class="col-label">TO ORDER</div>
+    `;
+    container.appendChild(hdr);
+
+    // Items
+    const allItems = [...section.items, ...getCustomItems(si)];
+    allItems.forEach((item, ii) => {
+      container.appendChild(makeItemRow(si, ii, item));
+    });
+
+    // (Item management moved to ⚙️ Manage Items tab)
+  });
+
+  updateTotals();
+}
+
+function makeItemRow(si, ii, item) {
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.id = `inv-row-${si}-${ii}`;
+  const inv = getInv(si, ii);
+  row.innerHTML = `
+    <div class="item-name">${item.name}</div>
+    <div style="text-align:center;"><span class="item-unit">${item.unit}</span></div>
+    <input type="number" min="0" value="${inv.have || ''}" placeholder="0"
+      id="have-${si}-${ii}" inputmode="numeric"
+      onchange="setVal(${si},${ii},'have',this.value)"
+      oninput="setVal(${si},${ii},'have',this.value)" />
+    <input type="number" min="0" value="${inv.order || ''}" placeholder="0"
+      id="order-${si}-${ii}" inputmode="numeric"
+      onchange="setVal(${si},${ii},'order',this.value)"
+      oninput="setVal(${si},${ii},'order',this.value)" />
+  `;
+  
+  return row;
+}
+
+function setVal(si, ii, field, val) {
+  const parsed = parseInt(val) || 0;
+  getInv(si, ii)[field] = parsed;
+  const input = document.getElementById(`${field}-${si}-${ii}`);
+  if (input) {
+    if (parsed > 0 && field === 'have') input.classList.add('has-value');
+    else if (field === 'have') input.classList.remove('has-value');
+    if (parsed > 0 && field === 'order') input.classList.add('order-value');
+    else if (field === 'order') input.classList.remove('order-value');
+  }
+  saveInventory();
+  updateTotals();
+  updateOrderTotal();
+}
+
+function updateTotals() {
+  let totalOrder = 0;
+  SECTIONS.forEach((section, si) => {
+    const allItems = [...section.items, ...getCustomItems(si)];
+    allItems.forEach((_, ii) => {
+      totalOrder += getInv(si, ii).order || 0;
+    });
+  });
+  document.getElementById('grand-order').textContent = totalOrder;
+}
+
+// ═══════════════════════════════════════
+// BUILD PRICING FORM
+// ═══════════════════════════════════════
+function buildPricingForm() {
+  const container = document.getElementById('pricing-form');
+  container.innerHTML = '';
+
+  SECTIONS.forEach((section, si) => {
+    const hdr = document.createElement('div');
+    hdr.className = 'price-section-header';
+    hdr.innerHTML = `
+      <div style="color:#fff;font-size:12px;">${section.name}</div>
+      <div class="col-label">UNIT PRICE ($)</div>
+      <div class="col-label">LINE TOTAL</div>
+    `;
+    container.appendChild(hdr);
+
+    const allItems = [...section.items, ...getCustomItems(si)];
+    allItems.forEach((item, ii) => {
+      const row = document.createElement('div');
+      row.className = 'price-row';
+      const price = getPrice(si, ii);
+      const orderQty = getInv(si, ii).order || 0;
+      const lineTotal = (price * orderQty).toFixed(2);
+      row.innerHTML = `
+        <div>
+          <div class="item-name">${item.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+            <span class="item-unit">${item.unit}</span>
+            <span style="font-size:12px;font-weight:700;color:${orderQty > 0 ? 'var(--green)' : 'var(--text-mid)'};">× ${orderQty} to order</span>
+          </div>
+        </div>
+        <input type="number" min="0" step="0.01" value="${price || ''}" placeholder="0.00"
+          id="price-${si}-${ii}" inputmode="decimal"
+          onchange="updatePrice(${si},${ii},this.value)"
+          oninput="updatePrice(${si},${ii},this.value)" />
+        <div class="line-total" id="linetotal-${si}-${ii}">
+          ${orderQty > 0 && price > 0 ? '$' + lineTotal : '–'}
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  });
+
+  updateOrderTotal();
+}
+
+function updatePrice(si, ii, val) {
+  const price = parseFloat(val) || 0;
+  setPrice(si, ii, price);
+  const orderQty = getInv(si, ii).order || 0;
+  const lineTotal = (price * orderQty).toFixed(2);
+  const ltEl = document.getElementById(`linetotal-${si}-${ii}`);
+  if (ltEl) ltEl.textContent = (orderQty > 0 && price > 0) ? '$' + lineTotal : '–';
+  updateOrderTotal();
+}
+
+function updateOrderTotal() {
+  let total = 0;
+  SECTIONS.forEach((section, si) => {
+    const allItems = [...section.items, ...getCustomItems(si)];
+    allItems.forEach((_, ii) => {
+      total += getPrice(si, ii) * (getInv(si, ii).order || 0);
+    });
+  });
+  const el = document.getElementById('order-total-display');
+  if (el) el.textContent = '$' + total.toFixed(2);
+}
+
+// ═══════════════════════════════════════
+// WHATSAPP — SEND AS PDF
+// ═══════════════════════════════════════
+async function sendAsPDF() {
+  const sendBar = document.querySelector('.send-bar');
+  const totalsRow = document.querySelector('.totals-row');
+  const page = document.getElementById('page-inventory');
+
+  // Temporarily adjust for clean full-page capture
+  sendBar.style.display = 'none';
+  const origPadding = page.style.paddingBottom;
+  const origTotalsPos = totalsRow ? totalsRow.style.position : '';
+  const origTotalsBottom = totalsRow ? totalsRow.style.bottom : '';
+  page.style.paddingBottom = '16px';
+  if (totalsRow) { totalsRow.style.position = 'relative'; totalsRow.style.bottom = ''; }
+
+  const dateVal = document.getElementById('inv-date').value;
+  const dateStr = dateVal
+    ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
+    : 'inventory';
+  const filename = `BR-Order-${dateVal || 'draft'}.pdf`;
+
+  try {
+    const pageH = page.scrollHeight;
+    const pageMM = Math.ceil(pageH * 0.264583) + 4;
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#FFF0F7',
+        height: pageH,
+        windowHeight: pageH,
+      },
+      jsPDF: { unit: 'mm', format: [110, pageMM], orientation: 'portrait' },
+    };
+
+    const blob = await html2pdf().set(opt).from(page).output('blob');
+    const file = new File([blob], filename, { type: 'application/pdf' });
+
+    // Try native share (mobile)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `BR Order — ${dateStr}`,
+      });
+    } else {
+      // Fallback: download the PDF
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      alert('Could not share PDF. Try "Send as Text" instead.');
+    }
+  } finally {
+    sendBar.style.display = '';
+    page.style.paddingBottom = origPadding;
+    if (totalsRow) { totalsRow.style.position = origTotalsPos; totalsRow.style.bottom = origTotalsBottom; }
+  }
+}
+
+// ═══════════════════════════════════════
+// WHATSAPP — SEND AS TEXT (non-zero only)
+// ═══════════════════════════════════════
+function sendAsText() {
+  const dateVal = document.getElementById('inv-date').value;
+  const staffVal = document.getElementById('staff-name').value.trim();
+  const dateStr = dateVal
+    ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
+    : 'Date not set';
+
+  let msg = `🍦 *BASKIN-ROBBINS PRODUCT ORDER*\n`;
+  msg += `📅 ${dateStr}\n`;
+  if (staffVal) msg += `👤 Staff: ${staffVal}\n`;
+
+  let grandOrder = 0;
+
+  SECTIONS.forEach((section, si) => {
+    const allItems = [...section.items, ...getCustomItems(si)];
+    let sectionLines = [];
+
+    allItems.forEach((item, ii) => {
+      const inv = getInv(si, ii);
+      const have = inv.have || 0;
+      const order = inv.order || 0;
+      grandOrder += order;
+
+      if (have > 0 || order > 0) {
+        const orderTag = order > 0 ? `📦 *${order}*` : `0`;
+        sectionLines.push(`${item.name} · Have: ${have} · Order: ${orderTag}`);
+      }
+    });
+
+    if (sectionLines.length > 0) {
+      msg += `\n*── ${section.name} ──*\n`;
+      msg += sectionLines.join('\n') + '\n';
+    }
+  });
+
+  msg += `\n*─────────────────*\n`;
+  msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
+
+  let orderTotal = 0;
+  SECTIONS.forEach((section, si) => {
+    const allItems = [...section.items, ...getCustomItems(si)];
+    allItems.forEach((_, ii) => {
+      orderTotal += getPrice(si, ii) * (getInv(si, ii).order || 0);
+    });
+  });
+  if (orderTotal > 0) {
+    msg += `*ORDER VALUE: $${orderTotal.toFixed(2)}*\n`;
+  }
+
+  const encoded = encodeURIComponent(msg);
+  window.open(`https://wa.me/?text=${encoded}`, '_blank');
+}
+
+// ═══════════════════════════════════════
+// CLEAR
+// ═══════════════════════════════════════
+function confirmClear() {
+  if (confirm('Clear all inventory counts for a new count?\n\nCustom items and prices will be kept.')) {
+    state.inventory = {};
+    saveInventory();
+    buildInventoryForm();
+    buildPricingForm();
+    document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('staff-name').value = '';
+    localStorage.removeItem(LS_KEYS.staffDate);
+  }
+}
+
+function saveStaffDate() {
+  const d = document.getElementById('inv-date').value;
+  const s = document.getElementById('staff-name').value;
+  localStorage.setItem(LS_KEYS.staffDate, JSON.stringify({ date: d, staff: s }));
+}
+
+// ═══════════════════════════════════════
+// PAGE NAV
+// ═══════════════════════════════════════
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (page === 'pricing') buildPricingForm();
+  if (page === 'manage') buildManagePage();
+}
+
+// ═══════════════════════════════════════
+// MANAGE ITEMS PAGE
+// ═══════════════════════════════════════
+function buildManagePage() {
+  const container = document.getElementById('manage-sections');
+  container.innerHTML = '';
+
+  SECTIONS.forEach((section, si) => {
+    const customs = getCustomItems(si);
+    const allItems = [...section.items, ...customs];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'manage-section';
+
+    // Collapsible header
+    const hdr = document.createElement('div');
+    hdr.className = 'manage-section-header';
+    hdr.innerHTML = `
+      <span>${section.name} <span style="color:#E8C4A8;font-weight:400;font-size:11px;">(${allItems.length} items)</span></span>
+      <span class="section-toggle">▼</span>
+    `;
+    hdr.addEventListener('click', () => {
+      hdr.classList.toggle('collapsed');
+      body.classList.toggle('collapsed');
+    });
+    wrap.appendChild(hdr);
+
+    const body = document.createElement('div');
+    body.className = 'manage-section-body';
+
+    // Add-item form
+    const addForm = document.createElement('div');
+    addForm.className = 'manage-add-form';
+    addForm.innerHTML = `
+      <input type="text" id="mng-name-${si}" placeholder="Item name..." />
+      <select id="mng-unit-${si}">
+        <option value="TUB">TUB</option>
+        <option value="CASE">CASE</option>
+      </select>
+      <button class="btn-add-item" onclick="manageAddItem(${si})">＋ Add</button>
+    `;
+    body.appendChild(addForm);
+
+    // Items list
+    const list = document.createElement('div');
+    list.className = 'manage-item-list';
+
+    allItems.forEach((item, ii) => {
+      const isCustom = ii >= section.items.length;
+      const row = document.createElement('div');
+      row.className = 'manage-item-row' + (isCustom ? ' is-custom' : '');
+      row.innerHTML = `
+        <div class="manage-item-info">
+          <div class="manage-item-name">${item.name}</div>
+          <div class="manage-item-meta">
+            <span class="manage-item-badge${isCustom ? ' custom-badge' : ''}">${item.unit}</span>
+            ${isCustom ? '<span style="color:var(--pink);font-size:10px;">custom item</span>' : '<span style="color:var(--text-mid);font-size:10px;">base item</span>'}
+          </div>
+        </div>
+        ${isCustom
+          ? `<button class="btn-remove-item" onclick="removeCustomItem(${si}, ${ii - section.items.length})">Remove</button>`
+          : `<span style="font-size:11px;color:#ccc;">locked</span>`
+        }
+      `;
+      list.appendChild(row);
+    });
+
+    if (allItems.length === 0) {
+      list.innerHTML = '<div class="manage-empty">No items in this section.</div>';
+    }
+
+    body.appendChild(list);
+    wrap.appendChild(body);
+    container.appendChild(wrap);
+  });
+}
+
+function manageAddItem(si) {
+  const nameEl = document.getElementById(`mng-name-${si}`);
+  const unitEl = document.getElementById(`mng-unit-${si}`);
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+
+  const customs = getCustomItems(si);
+  customs.push({ name: name.toUpperCase(), unit: unitEl.value });
+  nameEl.value = '';
+
+  saveCustomItems();
+  buildManagePage();
+  buildInventoryForm();
+  buildPricingForm();
+  showSavedBanner();
+}
+
+function removeCustomItem(si, customIdx) {
+  if (!confirm(`Remove "${getCustomItems(si)[customIdx].name}" from this section?`)) return;
+
+  const customs = getCustomItems(si);
+  const baseCount = SECTIONS[si].items.length;
+  const globalIdx = baseCount + customIdx;
+
+  // Remove from customs array
+  customs.splice(customIdx, 1);
+
+  // Shift inventory and price data for items after the removed one
+  const invSection = state.inventory[si] || {};
+  const priceSection = state.prices[si] || {};
+
+  // Remove the item's data and shift subsequent custom items down
+  for (let i = globalIdx; ; i++) {
+    if (invSection[i + 1] !== undefined) {
+      invSection[i] = invSection[i + 1];
+    } else {
+      delete invSection[i];
+      break;
+    }
+  }
+  for (let i = globalIdx; ; i++) {
+    if (priceSection[i + 1] !== undefined) {
+      priceSection[i] = priceSection[i + 1];
+    } else {
+      delete priceSection[i];
+      break;
+    }
+  }
+
+  saveCustomItems();
+  saveInventory();
+  savePrices();
+  buildManagePage();
+  buildInventoryForm();
+  buildPricingForm();
+  showSavedBanner();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore staff/date from localStorage, or default to today
+  try {
+    const sd = JSON.parse(localStorage.getItem(LS_KEYS.staffDate));
+    if (sd && sd.date) {
+      document.getElementById('inv-date').value = sd.date;
+      document.getElementById('staff-name').value = sd.staff || '';
+    } else {
+      document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+    }
+  } catch(e) {
+    document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+  }
+
+  // Auto-save date/staff on change
+  document.getElementById('inv-date').addEventListener('change', saveStaffDate);
+  document.getElementById('staff-name').addEventListener('input', saveStaffDate);
+
+  buildInventoryForm();
+});
+</script>
+</body>
+</html>

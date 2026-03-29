@@ -15,7 +15,7 @@
   }
 </style>
 <title>BR Inventory – 8750 Bayview Ave</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --pink:        #E8177A;
@@ -608,8 +608,8 @@
   <!-- SEND BAR -->
   <div class="send-bar">
     <button class="btn-clear" onclick="confirmClear()">🔄</button>
-    <button class="btn-whatsapp" onclick="sendAsPDF()">
-      📄 Send as PDF
+    <button class="btn-whatsapp" onclick="sendAsInventory()">
+      📲 Send Inventory
     </button>
     <button class="btn-text-send" onclick="sendAsText()">
       📝 Text
@@ -654,8 +654,7 @@
 <!-- FOOTER -->
 <div style="padding:8px 16px 80px;text-align:center;font-size:9px;color:#aaa;line-height:1.7;">
   Designed and developed by Nav Grewal. All Baskin-Robbins branding and IP property of Inspire Brands Int'l. Not for public distribution, franchisee use only.<br>
-  April 2026<br>
-  Ver 0.0
+  April 2026, Ver 0.0<br>
 </div>
 
 <script>
@@ -1033,9 +1032,9 @@ function updateOrderTotal() {
 }
 
 // ═══════════════════════════════════════
-// WHATSAPP — SEND AS PDF
+// SEND INVENTORY — JPEG IMAGE
 // ═══════════════════════════════════════
-async function sendAsPDF() {
+async function sendAsInventory() {
   const sendBar = document.querySelector('.send-bar');
   const totalsRow = document.querySelector('.totals-row');
   const page = document.getElementById('page-inventory');
@@ -1052,47 +1051,49 @@ async function sendAsPDF() {
   const dateStr = dateVal
     ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
     : 'inventory';
-  const filename = `BR-Order-${dateVal || 'draft'}.pdf`;
+  const filename = `BR-Order-${dateVal || 'draft'}.jpg`;
 
   try {
-    const pageH = page.scrollHeight;
-    const pageMM = Math.ceil(pageH * 0.264583) + 4;
-    const opt = {
-      margin: 0,
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#FFF0F7',
-        height: pageH,
-        windowHeight: pageH,
-      },
-      jsPDF: { unit: 'mm', format: [110, pageMM], orientation: 'portrait' },
-    };
+    const canvas = await html2canvas(page, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#FFF0F7',
+      height: page.scrollHeight,
+      windowHeight: page.scrollHeight,
+    });
 
-    const blob = await html2pdf().set(opt).from(page).output('blob');
-    const file = new File([blob], filename, { type: 'application/pdf' });
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+
+    let shared = false;
 
     // Try native share (mobile)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        files: [file],
-        title: `BR Order — ${dateStr}`,
-      });
-    } else {
-      // Fallback: download the PDF
+      try {
+        await navigator.share({ files: [file], title: `BR Order — ${dateStr}` });
+        shared = true;
+      } catch (shareErr) {
+        if (shareErr.name === 'AbortError') return; // user cancelled
+        // share failed — fall through to download
+      }
+    }
+
+    // Fallback: download the image
+    if (!shared) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
   } catch (e) {
     if (e.name !== 'AbortError') {
-      alert('Could not share PDF. Try "Send as Text" instead.');
+      console.error('Image capture error:', e);
+      alert('Could not capture inventory.\n\n' + (e.message || e));
     }
   } finally {
     sendBar.style.display = '';

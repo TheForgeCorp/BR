@@ -627,8 +627,8 @@
     <button class="btn-whatsapp" onclick="sendAsInventory()">
       Send Inventory
     </button>
-    <button class="btn-text-send" onclick="sendSummaryPDF()">
-      Summary
+    <button class="btn-text-send" onclick="sendAsText()">
+      Text
     </button>
   </div>
 </div>
@@ -1145,6 +1145,58 @@ async function sendAsInventory() {
     page.style.paddingBottom = origPadding;
     if (totalsRow) { totalsRow.style.position = origTotalsPos; totalsRow.style.bottom = origTotalsBottom; }
   }
+}
+
+// ═══════════════════════════════════════
+// WHATSAPP — SEND AS TEXT (non-zero only)
+// ═══════════════════════════════════════
+function padR(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length); }
+function padL(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : ' '.repeat(n - s.length) + s; }
+
+function sendAsText() {
+  const dateVal = document.getElementById('inv-date').value;
+  const staffVal = document.getElementById('staff-name').value.trim();
+  const dateStr = dateVal
+    ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
+    : 'Date not set';
+
+  let msg = `*BASKIN-ROBBINS PRODUCT ORDER*\n`;
+  msg += `${dateStr}\n`;
+  if (staffVal) msg += `${staffVal}\n`;
+
+  let grandOrder = 0;
+
+  SECTIONS.forEach((section, si) => {
+    const allItems = [...section.items, ...getCustomItems(si)];
+    const rows = [];
+
+    allItems.forEach((item, ii) => {
+      if (item.disabled) return;
+      const inv = getInv(si, ii);
+      const have = inv.have || 0;
+      const order = inv.order || 0;
+      grandOrder += order;
+      const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name;
+      rows.push({ name, have, order });
+    });
+
+    if (rows.length > 0) {
+      msg += `\n*${section.name}*\n`;
+      msg += '```\n';
+      msg += padR('Item', 22) + padL('H', 4) + padL('O', 4) + '\n';
+      msg += '─'.repeat(30) + '\n';
+      rows.forEach(r => {
+        msg += padR(r.name, 22) + padL(r.have, 4) + padL(r.order, 4) + '\n';
+      });
+      msg += '```\n';
+    }
+  });
+
+  msg += `\n*──────────────────────────────*\n`;
+  msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
+
+  const encoded = encodeURIComponent(msg);
+  window.open(`https://wa.me/?text=${encoded}`, '_blank');
 }
 
 // ═══════════════════════════════════════

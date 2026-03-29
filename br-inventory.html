@@ -1192,8 +1192,18 @@ function sendAsText() {
     }
   });
 
-  msg += `\n*──────────────────────────────*\n`;
+  let orderValue = 0;
+  SECTIONS.forEach((section, si) => {
+    [...section.items, ...getCustomItems(si)].forEach((item, ii) => {
+      if (item.disabled) return;
+      orderValue += getPrice(si, ii) * (getInv(si, ii).order || 0);
+    });
+  });
+  const fmtC = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  msg += `\n*────────────────────*\n`;
   msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
+  if (orderValue > 0) msg += `\n*ORDER VALUE: ${fmtC(orderValue)}*\n`;
 
   const encoded = encodeURIComponent(msg);
   location.href = `https://wa.me/?text=${encoded}`;

@@ -387,6 +387,12 @@
     color: var(--green);
     padding: 7px 4px;
   }
+  .order-qty {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-mid);
+  }
+  .order-qty.has-order { color: var(--green); }
 
   .order-total-bar {
     background: var(--pink);
@@ -936,8 +942,14 @@ function makeItemRow(si, ii, item) {
   return row;
 }
 
+let _saveTimer = null;
+function debouncedSaveInventory() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveInventory, 300);
+}
+
 function setVal(si, ii, field, val) {
-  const parsed = parseInt(val) || 0;
+  const parsed = Math.max(0, parseInt(val) || 0);
   getInv(si, ii)[field] = parsed;
   const input = document.getElementById(`${field}-${si}-${ii}`);
   if (input) {
@@ -946,26 +958,37 @@ function setVal(si, ii, field, val) {
     if (parsed > 0 && field === 'order') input.classList.add('order-value');
     else if (field === 'order') input.classList.remove('order-value');
   }
-  saveInventory();
+  debouncedSaveInventory();
+  markPricingDirty();
   updateTotals();
-  updateOrderTotal();
 }
 
 function updateTotals() {
   let totalOrder = 0;
+  let orderValue = 0;
   SECTIONS.forEach((section, si) => {
     const allItems = [...section.items, ...getCustomItems(si)];
     allItems.forEach((_, ii) => {
-      totalOrder += getInv(si, ii).order || 0;
+      const ord = getInv(si, ii).order || 0;
+      totalOrder += ord;
+      orderValue += getPrice(si, ii) * ord;
     });
   });
-  document.getElementById('grand-order').textContent = totalOrder;
+  const grandEl = document.getElementById('grand-order');
+  if (grandEl) grandEl.textContent = totalOrder;
+  const totalEl = document.getElementById('order-total-display');
+  if (totalEl) totalEl.textContent = '$' + orderValue.toFixed(2);
 }
 
 // ═══════════════════════════════════════
 // BUILD PRICING FORM
 // ═══════════════════════════════════════
+let _pricingDirty = true;
+function markPricingDirty() { _pricingDirty = true; }
+
 function buildPricingForm() {
+  if (!_pricingDirty) { updateTotals(); return; }
+  _pricingDirty = false;
   const container = document.getElementById('pricing-form');
   container.innerHTML = '';
 
@@ -991,7 +1014,7 @@ function buildPricingForm() {
           <div class="item-name">${item.name}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
             <span class="item-unit">${item.unit}</span>
-            <span style="font-size:12px;font-weight:700;color:${orderQty > 0 ? 'var(--green)' : 'var(--text-mid)'};">× ${orderQty} to order</span>
+            <span class="order-qty${orderQty > 0 ? ' has-order' : ''}">× ${orderQty} to order</span>
           </div>
         </div>
         <input type="number" min="0" step="0.01" value="${price || ''}" placeholder="0.00"
@@ -1010,25 +1033,13 @@ function buildPricingForm() {
 }
 
 function updatePrice(si, ii, val) {
-  const price = parseFloat(val) || 0;
+  const price = Math.max(0, parseFloat(val) || 0);
   setPrice(si, ii, price);
   const orderQty = getInv(si, ii).order || 0;
   const lineTotal = (price * orderQty).toFixed(2);
   const ltEl = document.getElementById(`linetotal-${si}-${ii}`);
   if (ltEl) ltEl.textContent = (orderQty > 0 && price > 0) ? '$' + lineTotal : '–';
-  updateOrderTotal();
-}
-
-function updateOrderTotal() {
-  let total = 0;
-  SECTIONS.forEach((section, si) => {
-    const allItems = [...section.items, ...getCustomItems(si)];
-    allItems.forEach((_, ii) => {
-      total += getPrice(si, ii) * (getInv(si, ii).order || 0);
-    });
-  });
-  const el = document.getElementById('order-total-display');
-  if (el) el.textContent = '$' + total.toFixed(2);
+  updateTotals();
 }
 
 // ═══════════════════════════════════════
@@ -1054,6 +1065,10 @@ async function sendAsInventory() {
   const filename = `BR-Order-${dateVal || 'draft'}.jpg`;
 
   try {
+    // Scroll to top so capture starts from the beginning of the page
+    window.scrollTo(0, 0);
+    await new Promise(r => setTimeout(r, 50)); // let scroll settle
+
     const canvas = await html2canvas(page, {
       scale: 2,
       useCORS: true,
@@ -1061,6 +1076,8 @@ async function sendAsInventory() {
       backgroundColor: '#FFF0F7',
       height: page.scrollHeight,
       windowHeight: page.scrollHeight,
+      scrollY: 0,
+      scrollX: 0,
     });
 
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
@@ -1230,14 +1247,14 @@ function buildManagePage() {
       <span>${section.name} <span style="color:#E8C4A8;font-weight:400;font-size:11px;">(${allItems.length} items)</span></span>
       <span class="section-toggle">▼</span>
     `;
+    const sectionBody = document.createElement('div');
+    sectionBody.className = 'manage-section-body';
+
     hdr.addEventListener('click', () => {
       hdr.classList.toggle('collapsed');
-      body.classList.toggle('collapsed');
+      sectionBody.classList.toggle('collapsed');
     });
     wrap.appendChild(hdr);
-
-    const body = document.createElement('div');
-    body.className = 'manage-section-body';
 
     // Add-item form
     const addForm = document.createElement('div');
@@ -1250,7 +1267,7 @@ function buildManagePage() {
       </select>
       <button class="btn-add-item" onclick="manageAddItem(${si})">＋ Add</button>
     `;
-    body.appendChild(addForm);
+    sectionBody.appendChild(addForm);
 
     // Items list
     const list = document.createElement('div');
@@ -1269,7 +1286,7 @@ function buildManagePage() {
           </div>
         </div>
         ${isCustom
-          ? `<button class="btn-remove-item" onclick="removeCustomItem(${si}, ${ii - section.items.length})">Remove</button>`
+          ? `<button class="btn-remove-item" data-remove="${si}-${ii - section.items.length}" onclick="removeCustomItem(${si}, ${ii - section.items.length})">Remove</button>`
           : `<span style="font-size:11px;color:#ccc;">locked</span>`
         }
       `;
@@ -1280,8 +1297,8 @@ function buildManagePage() {
       list.innerHTML = '<div class="manage-empty">No items in this section.</div>';
     }
 
-    body.appendChild(list);
-    wrap.appendChild(body);
+    sectionBody.appendChild(list);
+    wrap.appendChild(sectionBody);
     container.appendChild(wrap);
   });
 }
@@ -1297,14 +1314,29 @@ function manageAddItem(si) {
   nameEl.value = '';
 
   saveCustomItems();
+  markPricingDirty();
   buildManagePage();
   buildInventoryForm();
   buildPricingForm();
   showSavedBanner();
 }
 
+const _removeTimers = {};
 function removeCustomItem(si, customIdx) {
-  if (!confirm(`Remove "${getCustomItems(si)[customIdx].name}" from this section?`)) return;
+  const key = `${si}-${customIdx}`;
+  const btn = document.querySelector(`[data-remove="${key}"]`);
+  if (_removeTimers[key]) {
+    clearTimeout(_removeTimers[key]);
+    delete _removeTimers[key];
+    if (btn) { btn.textContent = 'Remove'; btn.style.background = ''; btn.style.color = ''; }
+  } else {
+    if (btn) { btn.textContent = 'Sure?'; btn.style.background = '#E53935'; btn.style.color = '#fff'; }
+    _removeTimers[key] = setTimeout(() => {
+      delete _removeTimers[key];
+      if (btn) { btn.textContent = 'Remove'; btn.style.background = ''; btn.style.color = ''; }
+    }, 3000);
+    return;
+  }
 
   const customs = getCustomItems(si);
   const baseCount = SECTIONS[si].items.length;

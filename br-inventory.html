@@ -91,7 +91,7 @@
   }
 
   /* ── PAGES ── */
-  .page { display: none; padding: 0 0 100px; }
+  .page { display: none; padding: 0; }
   .page.active { display: block; }
 
   /* ── DATE BAR ── */
@@ -1062,15 +1062,18 @@ async function sendAsInventory() {
   const dateStr = dateVal
     ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
     : 'inventory';
-  const filename = `BR-Order-${dateVal || 'draft'}.jpg`;
+  const filename = `BR-Order-${dateVal || 'draft'}.png`;
 
   try {
     // Scroll to top so capture starts from the beginning of the page
     window.scrollTo(0, 0);
     await new Promise(r => setTimeout(r, 50)); // let scroll settle
 
+    // Match the device's actual pixel density (3× on most modern phones)
+    const dpr = Math.min(3, window.devicePixelRatio || 2);
+
     const canvas = await html2canvas(page, {
-      scale: 2,
+      scale: dpr,
       useCORS: true,
       logging: false,
       backgroundColor: '#FFF0F7',
@@ -1080,8 +1083,9 @@ async function sendAsInventory() {
       scrollX: 0,
     });
 
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-    const file = new File([blob], filename, { type: 'image/jpeg' });
+    // PNG is lossless — no compression artifacts on text
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    const file = new File([blob], filename, { type: 'image/png' });
 
     let shared = false;
 

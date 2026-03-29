@@ -1069,11 +1069,10 @@ async function sendAsInventory() {
     window.scrollTo(0, 0);
     await new Promise(r => setTimeout(r, 50)); // let scroll settle
 
-    // Match the device's actual pixel density (3× on most modern phones)
-    const dpr = Math.min(3, window.devicePixelRatio || 2);
-
+    // Use scale 4 so the canvas is ~1560px wide — enough to stay sharp
+    // after WhatsApp's internal image compression
     const canvas = await html2canvas(page, {
-      scale: dpr,
+      scale: 4,
       useCORS: true,
       logging: false,
       backgroundColor: '#FFF0F7',
@@ -1154,7 +1153,7 @@ function sendAsText() {
       grandOrder += order;
       orderTotal += getPrice(si, ii) * order;
       if (have > 0 || order > 0) {
-        const name = item.name.length > 18 ? item.name.slice(0, 17) + '…' : item.name;
+        const name = item.name.length > 24 ? item.name.slice(0, 23) + '…' : item.name;
         rows.push({ name, have, order });
       }
     });
@@ -1162,17 +1161,18 @@ function sendAsText() {
     if (rows.length > 0) {
       msg += `\n*${section.name}*\n`;
       msg += '```\n';
-      msg += padR('─'.repeat(18), 19) + padL('H', 4) + padL('Ord', 5) + '\n';
+      msg += padR('─'.repeat(24), 25) + padL('H', 4) + padL('Ord', 5) + '\n';
       rows.forEach(r => {
-        msg += padR(r.name, 19) + padL(r.have, 4) + padL(r.order, 5) + '\n';
+        msg += padR(r.name, 25) + padL(r.have, 4) + padL(r.order, 5) + '\n';
       });
       msg += '```\n';
     }
   });
 
+  const fmtCurrency = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   msg += `\n*────────────────────────*\n`;
   msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
-  if (orderTotal > 0) msg += `\n*ORDER VALUE: $${orderTotal.toFixed(2)}*\n`;
+  if (orderTotal > 0) msg += `\n*ORDER VALUE: ${fmtCurrency(orderTotal)}*\n`;
 
   const encoded = encodeURIComponent(msg);
   window.open(`https://wa.me/?text=${encoded}`, '_blank');

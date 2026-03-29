@@ -627,8 +627,8 @@
     <button class="btn-whatsapp" onclick="sendAsInventory()">
       Send Inventory
     </button>
-    <button class="btn-text-send" onclick="sendAsText()">
-      Text
+    <button class="btn-text-send" onclick="sendSummaryPDF()">
+      Summary
     </button>
   </div>
 </div>
@@ -1148,60 +1148,128 @@ async function sendAsInventory() {
 }
 
 // ═══════════════════════════════════════
-// WHATSAPP — SEND AS TEXT (non-zero only)
+// ORDER SUMMARY PDF
 // ═══════════════════════════════════════
-function padR(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length); }
-function padL(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : ' '.repeat(n - s.length) + s; }
-
-function sendAsText() {
+async function sendSummaryPDF() {
   const dateVal = document.getElementById('inv-date').value;
   const staffVal = document.getElementById('staff-name').value.trim();
   const dateStr = dateVal
     ? new Date(dateVal + 'T00:00:00').toLocaleDateString('en-CA', { year:'numeric', month:'long', day:'numeric' })
     : 'Date not set';
-
-  let msg = `*BASKIN-ROBBINS PRODUCT ORDER*\n`;
-  msg += `${dateStr}\n`;
-  if (staffVal) msg += `${staffVal}\n`;
-
+  const filename = `BR-Summary-${dateVal || 'draft'}.pdf`;
+  // Collect only items with order > 0
   let grandOrder = 0;
-  let orderTotal = 0;
+  let sectionsHTML = '';
 
   SECTIONS.forEach((section, si) => {
     const allItems = [...section.items, ...getCustomItems(si)];
-    const rows = [];
+    let rowsHTML = '';
+    let rowIdx = 0;
 
     allItems.forEach((item, ii) => {
-      const inv = getInv(si, ii);
-      const have = inv.have || 0;
-      const order = inv.order || 0;
+      if (item.disabled) return;
+      const order = getInv(si, ii).order || 0;
+      if (order === 0) return;
       grandOrder += order;
-      orderTotal += getPrice(si, ii) * order;
-      if (have > 0 || order > 0) {
-        const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name;
-        rows.push({ name, have, order });
-      }
+      const bg = rowIdx % 2 === 0 ? '#FFFFFF' : '#FFF0F7';
+      rowsHTML += `
+        <tr style="background:${bg};">
+          <td style="padding:5px 8px;font-size:11px;color:#2D1A12;border-bottom:1px solid #E0E0E0;">${item.name}</td>
+          <td style="padding:5px 8px;font-size:12px;font-weight:700;text-align:center;color:#2E7D32;border-bottom:1px solid #E0E0E0;">${order}</td>
+        </tr>`;
+      rowIdx++;
     });
 
-    if (rows.length > 0) {
-      msg += `\n*${section.name}*\n`;
-      msg += '```\n';
-      msg += padR('Item', 22) + padL('H', 4) + padL('Ord', 4) + '\n';
-      msg += '─'.repeat(30) + '\n';
-      rows.forEach(r => {
-        msg += padR(r.name, 22) + padL(r.have, 4) + padL(r.order, 4) + '\n';
-      });
-      msg += '```\n';
+    if (rowsHTML) {
+      sectionsHTML += `
+        <tr>
+          <td colspan="2" style="background:#6B3A2A;color:#fff;padding:6px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">${section.name}</td>
+        </tr>
+        ${rowsHTML}`;
     }
   });
 
-  const fmtCurrency = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  msg += `\n*────────────────────────*\n`;
-  msg += `*TOTAL TO ORDER: ${grandOrder} units*\n`;
-  if (orderTotal > 0) msg += `\n*ORDER VALUE: ${fmtCurrency(orderTotal)}*\n`;
+  if (!sectionsHTML) {
+    alert('No items to order. Enter quantities on the Inventory page first.');
+    return;
+  }
 
-  const encoded = encodeURIComponent(msg);
-  window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  const logoPath = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'br-logo.png';
+
+  const html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FFF0F7;width:370px;">
+      <!-- Header -->
+      <div style="background:#E8177A;padding:12px 14px 10px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="background:#fff;border-radius:7px;padding:4px 7px;display:inline-flex;align-items:center;">
+          <img src="${logoPath}" style="height:32px;" crossorigin="anonymous" />
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#fff;font-size:13px;font-weight:700;letter-spacing:0.3px;">ORDER SUMMARY</div>
+          <div style="color:rgba(255,255,255,0.85);font-size:10px;margin-top:2px;">${dateStr}${staffVal ? ' · ' + staffVal : ''}</div>
+        </div>
+      </div>
+      <!-- Table -->
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#6B3A2A;">
+            <th style="padding:6px 8px;color:#E8C4A8;font-size:10px;font-weight:600;text-align:left;">ITEM</th>
+            <th style="padding:6px 8px;color:#E8C4A8;font-size:10px;font-weight:600;text-align:center;">QTY</th>
+          </tr>
+        </thead>
+        <tbody>${sectionsHTML}</tbody>
+      </table>
+      <!-- Footer -->
+      <div style="background:#6B3A2A;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+        <span style="font-size:12px;font-weight:700;">TOTAL UNITS TO ORDER</span>
+        <span style="font-size:20px;font-weight:900;color:#B9F6CA;">${grandOrder}</span>
+      </div>
+    </div>`;
+
+  // Measure height via off-screen div
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;';
+  probe.innerHTML = html;
+  document.body.appendChild(probe);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const probeH = probe.scrollHeight;
+  document.body.removeChild(probe);
+  const pageMM = Math.ceil(probeH * 0.264583) + 8;
+
+  try {
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#FFF0F7' },
+      jsPDF: { unit: 'mm', format: [110, pageMM], orientation: 'portrait' },
+    };
+
+    const blob = await html2pdf().set(opt).from(html).output('blob');
+    const file = new File([blob], filename, { type: 'application/pdf' });
+
+    let shared = false;
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: `BR Order Summary — ${dateStr}` });
+        shared = true;
+      } catch (shareErr) {
+        if (shareErr.name === 'AbortError') return;
+      }
+    }
+    if (!shared) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      console.error('Summary PDF error:', e);
+      alert('Could not generate summary.\n\n' + (e.message || e));
+    }
+  }
 }
 
 // ═══════════════════════════════════════

@@ -848,26 +848,42 @@ const DEFAULT_PRICES = {
   '9" CHOCOLATE CHIP COOKIE (POLAR PIZZA)': 82.99,
   'STRAWBERRY SMOOTHIE BASE': 52.73,
   "RICH'S TOPPING (WHIP CREAM)": 78.80,
+  'BROWNIE': 76.22,
+  'MANGO SMOOTHIE BASE': 49.77,
+  'CAPPUCCINO BLAST BASE': 66.91,
+  'SHEET CAKE CHOCOLATE': 73.34,
+  'ROLL CAKE CHOCOLATE': 58.24,
+  'SHEET CAKE WHITE': 68.87,
+  'REESE PEANUT BUTTER CUP (GROUND)': 67.63,
+  'ON TOP TOPPING': 56.39,
+  'ROUND CAKE \u2013 WHITE \u2013 8.5"': 48.89,
+  'ROUND CAKE \u2013 CHOCOLATE \u2013 8.5"': 57.76,
+  '10 lb. Mango, IQF, Diced 3/8"': 35.39,
+  '10 lb. Strawberries, IQF, Diced 3/8"': 37.36,
 };
 
 function applyDefaultPrices() {
-  if (Object.keys(state.prices).length > 0) return;
+  let changed = false;
 
   SECTIONS.forEach((section, si) => {
     if (!state.prices[si]) state.prices[si] = {};
     section.items.forEach((item, ii) => {
-      // Check for a specific named price first
+      // Only set if this item has no price yet
+      if (state.prices[si][ii] !== undefined && state.prices[si][ii] !== null) return;
       if (DEFAULT_PRICES[item.name] !== undefined) {
         state.prices[si][ii] = DEFAULT_PRICES[item.name];
+        changed = true;
       } else if (section.name === 'PRE-PACKS') {
         state.prices[si][ii] = DEFAULT_PRICES['_PREPACK_DEFAULT'];
+        changed = true;
       } else if (item.unit === 'TUB') {
         state.prices[si][ii] = DEFAULT_PRICES['_TUB_DEFAULT'];
+        changed = true;
       }
     });
   });
 
-  savePrices();
+  if (changed) savePrices();
 }
 applyDefaultPrices();
 

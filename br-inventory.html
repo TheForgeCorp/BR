@@ -617,16 +617,17 @@
     <div class="total-val-order" id="grand-order">0</div>
   </div>
 
-  <!-- SEND BAR -->
-  <div class="send-bar">
-    <button class="btn-clear" onclick="confirmClear()">Clear</button>
-    <button class="btn-whatsapp" onclick="sendAsInventory()">
-      Send Inventory
-    </button>
-    <button class="btn-text-send" onclick="sendAsText()">
-      Text
-    </button>
-  </div>
+</div>
+
+<!-- SEND BAR (outside page-inventory so it's excluded from PDF capture) -->
+<div class="send-bar">
+  <button class="btn-clear" onclick="confirmClear()">Clear</button>
+  <button class="btn-whatsapp" onclick="sendAsInventory()">
+    Send Inventory
+  </button>
+  <button class="btn-text-send" onclick="sendAsText()">
+    Text
+  </button>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -1109,9 +1110,6 @@ async function sendAsInventory() {
             clonedTotals.style.position = 'relative';
             clonedTotals.style.bottom = 'auto';
           }
-
-          const clonedSendBar = clonedPage.querySelector('.send-bar');
-          if (clonedSendBar) clonedSendBar.style.display = 'none';
 
           // Append order value row
           const valueRow = clonedDoc.createElement('div');

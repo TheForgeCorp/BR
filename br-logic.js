@@ -16,8 +16,8 @@ const SECTIONS = [
     name: "BEVERAGES",
     items: [
       { name: "STRAWBERRY SMOOTHIE BASE", unit: "CASE" },
-      { name: '10 lb. Mango, IQF, Diced 3/8"', unit: "CASE" },
-      { name: '10 lb. Strawberries, IQF, Diced 3/8"', unit: "CASE" },
+      { name: '10 LB. MANGO, IQF, DICED 3/8"', unit: "CASE" },
+      { name: '10 LB. STRAWBERRIES, IQF, DICED 3/8"', unit: "CASE" },
       { name: "MANGO SMOOTHIE BASE", unit: "CASE" },
       { name: "CAPPUCCINO BLAST BASE", unit: "CASE" },
     ]
@@ -158,8 +158,8 @@ const DEFAULT_PRICES = {
   'ON TOP TOPPING': 56.39,
   'ROUND CAKE – WHITE – 8.5"': 48.89,
   'ROUND CAKE – CHOCOLATE – 8.5"': 57.76,
-  '10 lb. Mango, IQF, Diced 3/8"': 35.39,
-  '10 lb. Strawberries, IQF, Diced 3/8"': 37.36,
+  '10 LB. MANGO, IQF, DICED 3/8"': 35.39,
+  '10 LB. STRAWBERRIES, IQF, DICED 3/8"': 37.36,
 };
 
 const LS_KEYS = {

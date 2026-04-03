@@ -1067,19 +1067,9 @@ function updatePrice(si, ii, val) {
 // SEND INVENTORY — JPEG IMAGE
 // ═══════════════════════════════════════
 async function sendAsInventory() {
-  const sendBar = document.querySelector('.send-bar');
-  const totalsRow = document.querySelector('.totals-row');
   const page = document.getElementById('page-inventory');
 
-  // Temporarily adjust for clean full-page capture
-  sendBar.style.display = 'none';
-  const origPadding = page.style.paddingBottom;
-  const origTotalsPos = totalsRow ? totalsRow.style.position : '';
-  const origTotalsBottom = totalsRow ? totalsRow.style.bottom : '';
-  page.style.paddingBottom = '0';
-  if (totalsRow) { totalsRow.style.position = 'relative'; totalsRow.style.bottom = ''; }
-
-  // Inject order value row beneath totals for PDF capture
+  // Build the order value row HTML
   const fmtC = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   let orderValue = 0;
   SECTIONS.forEach((section, si) => {
@@ -1087,10 +1077,6 @@ async function sendAsInventory() {
       orderValue += getPrice(si, ii) * (getInv(si, ii).order || 0);
     });
   });
-  const valueRow = document.createElement('div');
-  valueRow.style.cssText = 'background:#E8177A;color:#FFFFFF;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;';
-  valueRow.innerHTML = `<span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Order Value</span><span style="font-size:20px;font-weight:900;">${fmtC(orderValue)}</span>`;
-  page.appendChild(valueRow);
 
   const dateVal = document.getElementById('inv-date').value;
   const dateStr = dateVal
@@ -1099,16 +1085,6 @@ async function sendAsInventory() {
   const filename = `BR-Order-${dateVal || 'draft'}.pdf`;
 
   try {
-    // Force overflow visible so scrollHeight includes all content
-    page.style.overflow = 'visible';
-
-    // Wait two animation frames so the browser finishes layout after all DOM changes
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    // Measure after reflow — all sticky/fixed elements are now relative/hidden
-    const pageH = page.scrollHeight;
-    const pageMM = Math.ceil(pageH * 0.264583) + 10;
-
     const opt = {
       margin: 0,
       filename: filename,
@@ -1118,23 +1094,39 @@ async function sendAsInventory() {
         useCORS: true,
         logging: false,
         backgroundColor: '#FFF0F7',
-        height: pageH,
-        windowHeight: pageH,
         scrollY: 0,
         scrollX: 0,
         onclone: function(clonedDoc) {
           const clonedPage = clonedDoc.getElementById('page-inventory');
-          if (clonedPage) {
-            clonedPage.style.overflow = 'visible';
-            // Ensure the totals and value rows are not sticky/fixed in the clone
-            const clonedTotals = clonedPage.querySelector('.totals-row');
-            if (clonedTotals) { clonedTotals.style.position = 'relative'; clonedTotals.style.bottom = 'auto'; }
-            const clonedSendBar = clonedPage.querySelector('.send-bar');
-            if (clonedSendBar) clonedSendBar.style.display = 'none';
+          if (!clonedPage) return;
+
+          // Remove sticky/fixed positioning so all content flows naturally
+          clonedPage.style.overflow = 'visible';
+          clonedPage.style.paddingBottom = '0';
+
+          const clonedTotals = clonedPage.querySelector('.totals-row');
+          if (clonedTotals) {
+            clonedTotals.style.position = 'relative';
+            clonedTotals.style.bottom = 'auto';
           }
+
+          const clonedSendBar = clonedPage.querySelector('.send-bar');
+          if (clonedSendBar) clonedSendBar.style.display = 'none';
+
+          // Append order value row
+          const valueRow = clonedDoc.createElement('div');
+          valueRow.style.cssText = 'background:#E8177A;color:#FFFFFF;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;';
+          valueRow.innerHTML = '<span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Order Value</span><span style="font-size:20px;font-weight:900;">' + fmtC(orderValue) + '</span>';
+          clonedPage.appendChild(valueRow);
+
+          // Set the capture height to match the full cloned content
+          const h = clonedPage.scrollHeight;
+          opt.html2canvas.height = h;
+          opt.html2canvas.windowHeight = h;
+          opt.jsPDF.format = [110, Math.ceil(h * 0.264583) + 10];
         },
       },
-      jsPDF: { unit: 'mm', format: [110, pageMM], orientation: 'portrait' },
+      jsPDF: { unit: 'mm', format: [110, 300], orientation: 'portrait' },
     };
 
     const blob = await html2pdf().set(opt).from(page).output('blob');
@@ -1166,12 +1158,11 @@ async function sendAsInventory() {
       console.error('PDF error:', e);
       alert('Could not generate PDF.\n\n' + (e.message || e));
     }
-  } finally {
-    page.removeChild(valueRow);
-    sendBar.style.display = '';
-    page.style.paddingBottom = origPadding;
-    page.style.overflow = '';
-    if (totalsRow) { totalsRow.style.position = origTotalsPos; totalsRow.style.bottom = origTotalsBottom; }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      console.error('PDF error:', e);
+      alert('Could not generate PDF.\n\n' + (e.message || e));
+    }
   }
 }
 

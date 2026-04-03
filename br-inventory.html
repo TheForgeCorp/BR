@@ -1200,7 +1200,8 @@ function sendAsText() {
       const have = inv.have || 0;
       const order = inv.order || 0;
       grandOrder += order;
-      const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name;
+      let name = item.name.replace(/FLAVOUR OF THE MONTH/g, 'FOM');
+      name = name.length > 22 ? name.slice(0, 21) + '…' : name;
       rows.push({ name, have, order });
     });
 

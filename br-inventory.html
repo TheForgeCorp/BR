@@ -1158,11 +1158,6 @@ async function sendAsInventory() {
       console.error('PDF error:', e);
       alert('Could not generate PDF.\n\n' + (e.message || e));
     }
-  } catch (e) {
-    if (e.name !== 'AbortError') {
-      console.error('PDF error:', e);
-      alert('Could not generate PDF.\n\n' + (e.message || e));
-    }
   }
 }
 

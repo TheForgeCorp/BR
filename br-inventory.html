@@ -1201,17 +1201,17 @@ function sendAsText() {
       const order = inv.order || 0;
       grandOrder += order;
       let name = item.name.replace(/FLAVOUR OF THE MONTH/g, 'FOM');
-      name = name.length > 22 ? name.slice(0, 21) + '…' : name;
+      name = name.length > 20 ? name.slice(0, 19) + '…' : name;
       rows.push({ name, have, order });
     });
 
     if (rows.length > 0) {
       msg += `\n*${section.name}*\n`;
       msg += '```\n';
-      msg += padR('Item', 22) + padL('H', 4) + padL('O', 4) + '\n';
-      msg += '─'.repeat(30) + '\n';
+      msg += padR('Item', 20) + padL('H', 3) + padL('O', 3) + '\n';
+      msg += '─'.repeat(26) + '\n';
       rows.forEach(r => {
-        msg += padR(r.name, 22) + padL(r.have, 4) + padL(r.order, 4) + '\n';
+        msg += padR(r.name, 20) + padL(r.have, 3) + padL(r.order, 3) + '\n';
       });
       msg += '```\n';
     }

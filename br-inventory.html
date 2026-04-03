@@ -1069,6 +1069,10 @@ function updatePrice(si, ii, val) {
 // ═══════════════════════════════════════
 async function sendAsInventory() {
   const page = document.getElementById('page-inventory');
+  const sendBar = document.querySelector('.send-bar');
+
+  // Hide send bar so html2canvas doesn't capture it
+  sendBar.style.display = 'none';
 
   // Build the order value row HTML
   const fmtC = v => '$' + v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1156,6 +1160,8 @@ async function sendAsInventory() {
       console.error('PDF error:', e);
       alert('Could not generate PDF.\n\n' + (e.message || e));
     }
+  } finally {
+    sendBar.style.display = '';
   }
 }
 

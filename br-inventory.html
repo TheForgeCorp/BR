@@ -1102,7 +1102,10 @@ async function sendAsInventory() {
     // Wait two animation frames so the browser finishes layout after DOM changes
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    const pageH = page.scrollHeight;
+    // Force layout reflow so scrollHeight includes all content
+    // now that sticky/fixed positioning has been removed
+    page.style.overflow = 'visible';
+    const pageH = page.scrollHeight + 20;
     const pageMM = Math.ceil(pageH * 0.264583) + 8;
 
     const opt = {
@@ -1118,6 +1121,14 @@ async function sendAsInventory() {
         windowHeight: pageH,
         scrollY: 0,
         scrollX: 0,
+        onclone: function(clonedDoc) {
+          // Ensure all content is visible in the cloned document
+          const clonedPage = clonedDoc.getElementById('page-inventory');
+          if (clonedPage) {
+            clonedPage.style.overflow = 'visible';
+            clonedPage.style.paddingBottom = '20px';
+          }
+        },
       },
       jsPDF: { unit: 'mm', format: [110, pageMM], orientation: 'portrait' },
     };
@@ -1155,6 +1166,7 @@ async function sendAsInventory() {
     page.removeChild(valueRow);
     sendBar.style.display = '';
     page.style.paddingBottom = origPadding;
+    page.style.overflow = '';
     if (totalsRow) { totalsRow.style.position = origTotalsPos; totalsRow.style.bottom = origTotalsBottom; }
   }
 }
